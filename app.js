@@ -21,8 +21,8 @@ app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 
 // middleware
-const rutasProtegidas = express.Router(); 
-rutasProtegidas.use((req, res, next) => {
+const authentication = express.Router(); 
+authentication.use((req, res, next) => {
     const token = req.headers['authorization'];
  
     if (token) {
@@ -43,7 +43,6 @@ rutasProtegidas.use((req, res, next) => {
 
 // url
 app.post('/login', (req, res) => {
-	//console.log(req.body);
     if(req.query.user === "matias" && req.query.password === "1234") {
 		const payload = {
 	   		check:  true
@@ -73,7 +72,7 @@ app.post('/login', (req, res) => {
 });
 
 
-app.get('/files/list', rutasProtegidas, function(req, res) {
+app.get('/files/list', authentication, function(req, res) {
 
 	const directoryPath = path.join(__dirname, 'files');
 	var files = [],
@@ -105,17 +104,15 @@ app.get('/files/list', rutasProtegidas, function(req, res) {
 		
 		fileSizes.push(size);
 		responseFiles.push(responseDict);
-		//console.log(req.query.humanreadable);
 	});
 	
 	res.json({
    		response: [responseFiles]
   	});
-  	//console.log(result);
 });
 
 
-app.get('/files/metrics', rutasProtegidas, function(req, res) {
+app.get('/files/metrics', authentication, function(req, res) {
 
 	const readInterface = readline.createInterface({
 	    input: fs.createReadStream(path.join(__dirname, 'files/file1.tsv')),
@@ -137,38 +134,24 @@ app.get('/files/metrics', rutasProtegidas, function(req, res) {
 	if (day.length < 2) 
     	day = '0' + day;
     var inicio = year+'-'+month+'-'+day+'T'+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
-    //console.log(inicio);
 
 	readInterface.on('line', function(line) {
-
 		var line = line.split('\t');
-		//console.log(line);
 		var listSegment = line[1].split(',');
 		for (var item in listSegment){
-
 			var key = String(line[2]);
-
-
 			if (!o[listSegment[item]]){
 				var p = new Object();
 				p[key] = 1;
 				o[listSegment[item]] = p;
-
 			} else {
-
 				if (key in o[listSegment[item]]){
-					//console.log('---  second if ----');
 					o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
 				} else {
-					//console.log('---  second else ----');
 					o[listSegment[item]][String(key)] = 1;
-					//console.log(o[listSegment[item]]);
 				}
-
 			}
 		}
-
-
 	});	
 	var metrics = [];
 	readInterface.on('close', function() {
@@ -189,15 +172,12 @@ app.get('/files/metrics', rutasProtegidas, function(req, res) {
 				dict['count'] = o[key][key2];
 				uniques.push(dict);
 			}
-			//console.log(uniques);
-			//console.log('---------');
 			metrics.push({
 				'segmentId': key,
 				'Uniques': uniques
 			});
 			
 		}
-		//console.log(metrics);
 		var d = new Date(),
     	month = '' + (d.getMonth() + 1),
     	day = '' + d.getDate(),
