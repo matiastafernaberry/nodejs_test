@@ -92,30 +92,25 @@ app.get('/files/list', rutasProtegidas, function(req, res) {
 		return (bytes / Math.pow(1024, i)).toFixed(1) + " " + sizes[i]
 	} 
 
+	var responseFiles = [];
 	fs.readdirSync(directoryPath).forEach(file => {
+		var responseDict = {};
 		files.push(file);
 		if(req.query.humanreadable == 'true'){
 			var size = convertBytes(fs.statSync(directoryPath+ '/' +file).size)
 		} else {
 			var size = fs.statSync(directoryPath+ '/' +file).size;
 		}
+		responseDict['name'] = file;
+		responseDict['size'] = size
 		
 		fileSizes.push(size);
-		console.log(req.query.humanreadable);
+		responseFiles.push(responseDict);
+		//console.log(req.query.humanreadable);
 	});
-
-	//console.log(files);
+	
 	res.json({
-   		response: [{
-   			'name': files[0],
-   			'size': fileSizes[0]
-   		},{
-   			'name': files[1],
-   			'size': fileSizes[1]
-   		},{
-   			'name': files[2],
-   			'size': fileSizes[2]
-   		}]
+   		response: [responseFiles]
   	});
   	//console.log(result);
 });
