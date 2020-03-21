@@ -155,18 +155,15 @@ app.get('/files/metrics', authentication, function(req, res) {
 	});	
 	var metrics = [];
 	readInterface.on('close', function() {
-    //do something with lines
-
-	   //  var oo = {
-  		// 	'183': { BR: 27769, AR: 1166, MX: 3411, CO: 1241, CL: 98, PE: 107 },
-  		// 	'184': { BR: 57242, AR: 2869, CL: 859, MX: 10102, CO: 3523, PE: 1180 },
-  		// 	'185': { MX: 4265, BR: 17648, AR: 272, PE: 178, CO: 839, CL: 272 }
-  		// }
+	   	//  var oo = {
+  		// 		'183': { BR: 27769, AR: 1166, MX: 3411, CO: 1241, CL: 98, PE: 107 },
+  		// 		'184': { BR: 57242, AR: 2869, CL: 859, MX: 10102, CO: 3523, PE: 1180 },
+  		// 		'185': { MX: 4265, BR: 17648, AR: 272, PE: 178, CO: 839, CL: 272 }
+  		//  }
 		
 	    for (var key in o){
 			var uniques = [];
 			for (var key2 in o[key]){
-				//console.log(key2);
 				var dict = {};
 				dict['country'] = key2;
 				dict['count'] = o[key][key2];
@@ -193,7 +190,7 @@ app.get('/files/metrics', authentication, function(req, res) {
 	   		response: {
 	   			'status': 'ready',
 	   			'started' : inicio,
-	   			'finished' : inicio,
+	   			'finished' : fin,
 	   			'Metrics': metrics
 	   		}
 	  	});
@@ -203,5 +200,5 @@ app.get('/files/metrics', authentication, function(req, res) {
 
 
 app.listen(3000, () => {
- console.log("El servidor está inicializado en el puerto 3000");
+	console.log("El servidor está inicializado en el puerto 3000");
 });
