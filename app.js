@@ -73,7 +73,6 @@ app.post('/login', (req, res) => {
 
 
 app.get('/files/list', authentication, function(req, res) {
-
 	const directoryPath = path.join(__dirname, 'files');
 	var files = [],
 		fileSizes = [];
@@ -113,15 +112,12 @@ app.get('/files/list', authentication, function(req, res) {
 
 
 app.get('/files/metrics', authentication, function(req, res) {
-
 	const readInterface = readline.createInterface({
 	    input: fs.createReadStream(path.join(__dirname, 'files/file1.tsv')),
 	    output: process,
 	    console: true
 	});
-	
-	cont = 0;
-	var BreakException = {};
+
 	const o = new Object();
 
 	var d = new Date(),
@@ -160,7 +156,6 @@ app.get('/files/metrics', authentication, function(req, res) {
   		// 		'184': { BR: 57242, AR: 2869, CL: 859, MX: 10102, CO: 3523, PE: 1180 },
   		// 		'185': { MX: 4265, BR: 17648, AR: 272, PE: 178, CO: 839, CL: 272 }
   		//  }
-		
 	    for (var key in o){
 			var uniques = [];
 			for (var key2 in o[key]){
