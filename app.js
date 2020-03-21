@@ -20,7 +20,6 @@ app.use(session({
 app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 
-
 // middleware
 const rutasProtegidas = express.Router(); 
 rutasProtegidas.use((req, res, next) => {
@@ -220,20 +219,7 @@ app.get('/files/metrics', rutasProtegidas, function(req, res) {
 	  	});
 
 	})
-
-	
 });
-
-
-app.get('/home', function(request, response) {
-	if (request.session.loggedin) {
-		response.send('Welcome back, ' + request.session.username + '!');
-	} else {
-		response.send('Please login to view this page!');
-	}
-	response.end();
-});
-
 
 
 app.listen(3000, () => {
