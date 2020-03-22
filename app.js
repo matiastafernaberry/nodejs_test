@@ -113,16 +113,7 @@ app.get('/files/metrics', authentication, function(req, res) {
 
 	const o = new Object();
 
-	var d = new Date(),
-    	month = '' + (d.getMonth() + 1),
-    	day = '' + d.getDate(),
-    	year = d.getFullYear();
-
-    if (month.length < 2) 
-    	month = '0' + month;
-	if (day.length < 2) 
-    	day = '0' + day;
-    var inicio = year+'-'+month+'-'+day+'T'+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+	var dateNowStart = dateNow.getDate();
 
 	readInterface.on('line', function(line) {
 		var line = line.split('\t');
@@ -163,22 +154,13 @@ app.get('/files/metrics', authentication, function(req, res) {
 			});
 			
 		}
-		var d = new Date(),
-    	month = '' + (d.getMonth() + 1),
-    	day = '' + d.getDate(),
-    	year = d.getFullYear();
-
-	    if (month.length < 2) 
-	    	month = '0' + month;
-		if (day.length < 2) 
-	    	day = '0' + day;
-	    var fin = year+'-'+month+'-'+day+'T'+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds();
+		var dateNowEnd = dateNow.getDate();
 
 		res.json({
 	   		response: {
 	   			'status': 'ready',
-	   			'started' : inicio,
-	   			'finished' : fin,
+	   			'started' : dateNowStart,
+	   			'finished' : dateNowEnd,
 	   			'Metrics': metrics
 	   		}
 	  	});
