@@ -9,6 +9,8 @@ const fs = require('fs'),
     config = require('./configs/config'),
     app = express();
 
+let dateNow = require('./date');
+
 app.set('key', config.key);
 // session
 app.use(session({
@@ -51,19 +53,10 @@ app.post('/login', (req, res) => {
 	   		expiresIn: 3600
 	  	});
   	
-	  	var d = new Date(),
-        	month = '' + (d.getMonth() + 1),
-        	day = '' + d.getDate(),
-        	year = d.getFullYear();
-        d.setSeconds( d.getSeconds() + 3600 );
-
-	  	if (month.length < 2) 
-        	month = '0' + month;
-    	if (day.length < 2) 
-        	day = '0' + day;
+	  	var dateNowExpires = dateNow.getDate(login=true);
 
 	  	res.json({
-	   		expires: year+'-'+month+'-'+day+'T'+d.getHours()+':'+d.getMinutes()+':'+d.getSeconds(),
+	   		expires: dateNowExpires,
 	   		token: token
 	  	});
 	} else {
@@ -99,7 +92,7 @@ app.get('/files/list', authentication, function(req, res) {
 			var size = fs.statSync(directoryPath+ '/' +file).size;
 		}
 		responseDict['name'] = file;
-		responseDict['size'] = size
+		responseDict['size'] = size;
 		
 		fileSizes.push(size);
 		responseFiles.push(responseDict);
