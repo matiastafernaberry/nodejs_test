@@ -10,7 +10,7 @@ const fs = require('fs'),
     app = express();
 
 
-var isInProcess = false; 
+var isInProcess = {}; 
 var status = '';
 
 let dateNow = require('./date');
@@ -141,8 +141,8 @@ app.get('/files/metrics', authentication, (req, res) => {
 
 			var dateNowStart = dateNow.getDate();
 
-			if (!isInProcess){
-				isInProcess = true;
+			if (!isInProcess[nameFile]){
+				isInProcess[nameFile] = "started";
 				
 				readInterface.on('line', function(line) {
 					var line = line.split('\t');
@@ -198,7 +198,7 @@ app.get('/files/metrics', authentication, (req, res) => {
 						if (err) {
 							console.log(err);
 						} 
-						isInProcess = false;
+						isInProcess[nameFile] = "ready";
 						
 					});
 				});
@@ -219,10 +219,11 @@ app.get('/files/metrics', authentication, (req, res) => {
 						'started': dateNowStart
 					}
 				});
+				isInProcess[nameFile] = "processing";
 				
-				isInProcess = true;
 			}	
 		}
+		console.log(isInProcess);
 	}
 });
 
