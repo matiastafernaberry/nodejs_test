@@ -128,9 +128,6 @@ app.get('/files/metrics', authentication, (req, res) => {
 			console: true
 		});
 		
-		
-
-		
 		if (fs.existsSync(fileProcess)) {
 			fs.readFile(fileProcess, function(err, data) {
 				var dataSend = JSON.parse(data.toString());
