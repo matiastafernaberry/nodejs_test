@@ -9,9 +9,8 @@ const fs = require('fs'),
     config = require('./configs/config'),
     app = express();
 
-var childProcessEnd = true; 
-var childProcessStart = false;
-var sendBool = false; 
+
+var isInProcess = false; 
 var status = '';
 
 let dateNow = require('./date');
@@ -90,7 +89,7 @@ app.get('/files/list', authentication, (req, res) => {
 	var responseFiles = [];
 	fs.readdirSync(directoryPath).forEach(file => {
 		var responseDict = {};
-		files.push(file);
+		files.push(file.replace('.tsv',''));
 		if(req.query.humanreadable == 'true'){
 			var size = convertBytes(fs.statSync(directoryPath+ '/' +file).size)
 		} else {
@@ -110,39 +109,35 @@ app.get('/files/list', authentication, (req, res) => {
 
 
 app.get('/files/metrics', authentication, (req, res) => {
+
+	var nameFile = req.query.filename;
+	var fileProcess = req.query.filename + '.txt';
+
 	const readInterface = readline.createInterface({
-	    input: fs.createReadStream(path.join(__dirname, 'files/file1.tsv')),
+	    input: fs.createReadStream(path.join(__dirname, 'files/'+nameFile+'.tsv')),
 	    output: process,
 	    console: true
 	});
 
 	try {
-	  	if (fs.existsSync('file1.txt')) {
-	    	fs.readFile('file1.txt', function(err, data) {
+	  	if (fs.existsSync(fileProcess)) {
+	  		isInProcess = false;
+	    	fs.readFile(fileProcess, function(err, data) {
 	    		var dataSend = JSON.parse(data.toString());
-			    //console.log(data);
-			    //process.on('exit', function(code) {
 		    	console.log('return 1');
-		    	
-				//return console.log(`About to exit with code ${code}`);
-				sendBool = true;
-				//return process.kill(process.pid);
 				res.json(dataSend);
-				//});
 			});
 			
 	  	}
 	} catch(err) {
 	  	console.error(err)
 	}
-	if (!fs.existsSync('file1.txt')){
+	if (!fs.existsSync(fileProcess)){
 		const o = new Object();
 
 		var dateNowStart = dateNow.getDate();
 
-		if (!childProcessStart){
-			childProcessStart = true;
-			childProcessEnd = false;
+		if (isInProcess){
 			readInterface.on('line', function(line) {
 				var line = line.split('\t');
 				var listSegment = line[1].split(',');
@@ -178,8 +173,6 @@ app.get('/files/metrics', authentication, (req, res) => {
 					
 				}
 				var dateNowEnd = dateNow.getDate();
-				childProcessStart = false;
-				childProcessEnd = true;
 				status = 'ready';
 
 				console.log('end child');
@@ -194,40 +187,46 @@ app.get('/files/metrics', authentication, (req, res) => {
 	                }
 	            };
 	            var jsonData = JSON.stringify(jsonData);
-	            console.log(jsonData);
+	            //console.log(jsonData);
 	 			var fs = require('fs'); 
-				fs.writeFile("file1.txt", jsonData, function(err) {
+				fs.writeFile(fileProcess, jsonData, function(err) {
 				    if (err) {
 				        console.log(err);
 				    } else {
 				    	status == 'ready';
+
+				    	res.json({
+					   		response: {
+					   			'status': 'ready',
+					   			'started' : dateNowStart,
+					   			'finished' : dateNowEnd,
+					   			'Metrics': metrics
+					   		}
+			  			});
+			  			isInProcess = true;
 				    }
 				});
-				console.log('before res');
-				// res.json({
-			 //   		response: {
-			 //   			'status': 'ready',
-			 //   			'started' : dateNowStart,
-			 //   			'finished' : dateNowEnd,
-			 //   			'Metrics': metrics
-			 //   		}
-			 //  	});
-			 // 	res.redirect('/login');
 			});
 		} else {
-			if (status == 'processing'){
-				// res.json({
-			 //   		response: {
-			 //   			'status': 'processing',
-			 //   		}
-			 //  	});
-			};
+			if (isInProcess){
+				res.json({
+			   		response: {
+			   			'status': 'processing',
+			   			'started': dateNowStart
+			   		}
+			  	});
+			} else {
+				res.json({
+			   		response: {
+			   			'status': 'started',
+			   			'started': dateNowStart
+			   		}
+			  	});
+			}
+			isInProcess = true;
 			status = 'processing';
-		}
-		
+		}	
 	}
-
-	
 });
 
 
