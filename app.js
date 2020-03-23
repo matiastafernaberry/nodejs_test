@@ -89,7 +89,7 @@ app.get('/files/list', authentication, (req, res) => {
 	var responseFiles = [];
 	fs.readdirSync(directoryPath).forEach(file => {
 		var responseDict = {};
-		files.push(file.replace('.tsv',''));
+		files.push(file);
 		if(req.query.humanreadable == 'true'){
 			var size = convertBytes(fs.statSync(directoryPath+ '/' +file).size)
 		} else {
@@ -109,8 +109,10 @@ app.get('/files/list', authentication, (req, res) => {
 
 
 app.get('/files/metrics', authentication, (req, res) => {
+		
+	var nameFile = req.query.filename;
 
-	if (!fs.existsSync('files/' + req.query.filename + '.tsv')){
+	if (!fs.existsSync('files/' + nameFile)){
 		res.json({
 			response: {
 				'status': 'failed',
@@ -119,11 +121,10 @@ app.get('/files/metrics', authentication, (req, res) => {
 		});
 		
 	} else {
-		var nameFile = req.query.filename;
 		var fileProcess = req.query.filename + '.txt';
 
 		const readInterface = readline.createInterface({
-			input: fs.createReadStream(path.join(__dirname, 'files/'+nameFile+'.tsv')),
+			input: fs.createReadStream(path.join(__dirname, 'files/'+nameFile)),
 			output: process,
 			console: true
 		});
@@ -179,7 +180,6 @@ app.get('/files/metrics', authentication, (req, res) => {
 					}
 					var dateNowEnd = dateNow.getDate();
 					status = 'ready';
-
 					console.log('end child');
 					console.log(status);
 
@@ -198,7 +198,7 @@ app.get('/files/metrics', authentication, (req, res) => {
 						if (err) {
 							console.log(err);
 						} 
-						isInProcess = true;
+						isInProcess = false;
 						
 					});
 				});
