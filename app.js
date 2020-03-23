@@ -110,114 +110,122 @@ app.get('/files/list', authentication, (req, res) => {
 
 app.get('/files/metrics', authentication, (req, res) => {
 
-	var nameFile = req.query.filename;
-	var fileProcess = req.query.filename + '.txt';
+	if (!fs.existsSync('files/' + req.query.filename + '.tsv')){
+		res.json({
+			response: {
+				'status': 'failed',
+				'message': 'Missing file'
+			}
+		});
+		
+	} else {
+		var nameFile = req.query.filename;
+		var fileProcess = req.query.filename + '.txt';
 
-	const readInterface = readline.createInterface({
-	    input: fs.createReadStream(path.join(__dirname, 'files/'+nameFile+'.tsv')),
-	    output: process,
-	    console: true
-	});
+		const readInterface = readline.createInterface({
+			input: fs.createReadStream(path.join(__dirname, 'files/'+nameFile+'.tsv')),
+			output: process,
+			console: true
+		});
+		
+		
 
-	try {
-	  	if (fs.existsSync(fileProcess)) {
-	    	fs.readFile(fileProcess, function(err, data) {
-	    		var dataSend = JSON.parse(data.toString());
-		    	console.log('return 1');
+		
+		if (fs.existsSync(fileProcess)) {
+			fs.readFile(fileProcess, function(err, data) {
+				var dataSend = JSON.parse(data.toString());
+				console.log('return 1');
 				res.json(dataSend);
 			});
 			
-	  	}
-	} catch(err) {
-	  	console.error(err)
-	}
-	if (!fs.existsSync(fileProcess)){
-		const o = new Object();
+		} else {
+			const o = new Object();
 
-		var dateNowStart = dateNow.getDate();
+			var dateNowStart = dateNow.getDate();
 
-		if (!isInProcess){
-			isInProcess = true;
-			
-			readInterface.on('line', function(line) {
-				var line = line.split('\t');
-				var listSegment = line[1].split(',');
-				for (var item in listSegment){
-					var key = String(line[2]);
-					if (!o[listSegment[item]]){
-						var p = new Object();
-						p[key] = 1;
-						o[listSegment[item]] = p;
-					} else {
-						if (key in o[listSegment[item]]){
-							o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
+			if (!isInProcess){
+				isInProcess = true;
+				
+				readInterface.on('line', function(line) {
+					var line = line.split('\t');
+					var listSegment = line[1].split(',');
+					for (var item in listSegment){
+						var key = String(line[2]);
+						if (!o[listSegment[item]]){
+							var p = new Object();
+							p[key] = 1;
+							o[listSegment[item]] = p;
 						} else {
-							o[listSegment[item]][String(key)] = 1;
+							if (key in o[listSegment[item]]){
+								o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
+							} else {
+								o[listSegment[item]][String(key)] = 1;
+							}
 						}
 					}
-				}
-			});	
-			var metrics = [];
-			readInterface.on('close', function() {
-			    for (var key in o){
-					var uniques = [];
-					for (var key2 in o[key]){
-						var dict = {};
-						dict['country'] = key2;
-						dict['count'] = o[key][key2];
-						uniques.push(dict);
+				});	
+				var metrics = [];
+				readInterface.on('close', function() {
+					for (var key in o){
+						var uniques = [];
+						for (var key2 in o[key]){
+							var dict = {};
+							dict['country'] = key2;
+							dict['count'] = o[key][key2];
+							uniques.push(dict);
+						}
+						metrics.push({
+							'segmentId': key,
+							'Uniques': uniques
+						});
+						
 					}
-					metrics.push({
-						'segmentId': key,
-						'Uniques': uniques
+					var dateNowEnd = dateNow.getDate();
+					status = 'ready';
+
+					console.log('end child');
+					console.log(status);
+
+					var jsonData = {
+						'response': {
+							'status': 'ready',
+							'started' : dateNowStart,
+							'finished' : dateNowEnd,
+							'Metrics': metrics
+						}
+					};
+					var jsonData = JSON.stringify(jsonData);
+					//console.log(jsonData);
+					var fs = require('fs'); 
+					fs.writeFile(fileProcess, jsonData, function(err) {
+						if (err) {
+							console.log(err);
+						} 
+						isInProcess = true;
+						
 					});
-					
-				}
-				var dateNowEnd = dateNow.getDate();
-				status = 'ready';
-
-				console.log('end child');
-				console.log(status);
-
-				var jsonData = {
-	            	'response': {
-	                    'status': 'ready',
-	                    'started' : dateNowStart,
-	                    'finished' : dateNowEnd,
-	                	'Metrics': metrics
-	                }
-	            };
-	            var jsonData = JSON.stringify(jsonData);
-	            //console.log(jsonData);
-	 			var fs = require('fs'); 
-				fs.writeFile(fileProcess, jsonData, function(err) {
-				    if (err) {
-				        console.log(err);
-				    } 
-			  		isInProcess = true;
-				    
 				});
-			});
-			
-			console.log('return 2');
-			res.json({
-				response: {
-					'status': 'started',
-					'started': dateNowStart
-				}
-			});
-			
-		} else {
+				
+				console.log('return 2');
+				res.json({
+					response: {
+						'status': 'started',
+						'started': dateNowStart
+					}
+				});
+				
+			} else {
 
-			res.json({
-				response: {
-					'status': 'processing',
-					'started': dateNowStart
-				}
-			});
-			
-			isInProcess = true;
-		}	
+				res.json({
+					response: {
+						'status': 'processing',
+						'started': dateNowStart
+					}
+				});
+				
+				isInProcess = true;
+			}	
+		}
 	}
 });
 
