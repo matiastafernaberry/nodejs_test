@@ -121,7 +121,6 @@ app.get('/files/metrics', authentication, (req, res) => {
 
 	try {
 	  	if (fs.existsSync(fileProcess)) {
-	  		isInProcess = false;
 	    	fs.readFile(fileProcess, function(err, data) {
 	    		var dataSend = JSON.parse(data.toString());
 		    	console.log('return 1');
@@ -137,7 +136,9 @@ app.get('/files/metrics', authentication, (req, res) => {
 
 		var dateNowStart = dateNow.getDate();
 
-		if (isInProcess){
+		if (!isInProcess){
+			isInProcess = true;
+			
 			readInterface.on('line', function(line) {
 				var line = line.split('\t');
 				var listSegment = line[1].split(',');
@@ -192,39 +193,30 @@ app.get('/files/metrics', authentication, (req, res) => {
 				fs.writeFile(fileProcess, jsonData, function(err) {
 				    if (err) {
 				        console.log(err);
-				    } else {
-				    	status == 'ready';
-
-				    	res.json({
-					   		response: {
-					   			'status': 'ready',
-					   			'started' : dateNowStart,
-					   			'finished' : dateNowEnd,
-					   			'Metrics': metrics
-					   		}
-			  			});
-			  			isInProcess = true;
-				    }
+				    } 
+			  		isInProcess = true;
+				    
 				});
 			});
+			
+			console.log('return 2');
+			res.json({
+				response: {
+					'status': 'started',
+					'started': dateNowStart
+				}
+			});
+			
 		} else {
-			if (isInProcess){
-				res.json({
-			   		response: {
-			   			'status': 'processing',
-			   			'started': dateNowStart
-			   		}
-			  	});
-			} else {
-				res.json({
-			   		response: {
-			   			'status': 'started',
-			   			'started': dateNowStart
-			   		}
-			  	});
-			}
+
+			res.json({
+				response: {
+					'status': 'processing',
+					'started': dateNowStart
+				}
+			});
+			
 			isInProcess = true;
-			status = 'processing';
 		}	
 	}
 });
