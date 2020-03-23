@@ -145,21 +145,25 @@ app.get('/files/metrics', authentication, (req, res) => {
 				isInProcess[nameFile] = "started";
 				
 				readInterface.on('line', function(line) {
-					var line = line.split('\t');
-					var listSegment = line[1].split(',');
-					for (var item in listSegment){
-						var key = String(line[2]);
-						if (!o[listSegment[item]]){
-							var p = new Object();
-							p[key] = 1;
-							o[listSegment[item]] = p;
-						} else {
-							if (key in o[listSegment[item]]){
-								o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
+					try{
+						var line = line.split('\t');
+						var listSegment = line[1].split(',');
+						for (var item in listSegment){
+							var key = String(line[2]);
+							if (!o[listSegment[item]]){
+								var p = new Object();
+								p[key] = 1;
+								o[listSegment[item]] = p;
 							} else {
-								o[listSegment[item]][String(key)] = 1;
+								if (key in o[listSegment[item]]){
+									o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
+								} else {
+									o[listSegment[item]][String(key)] = 1;
+								}
 							}
 						}
+					} catch(err) {
+						console.log(err.message);						
 					}
 				});	
 				var metrics = [];
