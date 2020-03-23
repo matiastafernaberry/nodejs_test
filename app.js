@@ -9,6 +9,11 @@ const fs = require('fs'),
     config = require('./configs/config'),
     app = express();
 
+var childProcessEnd = true; 
+var childProcessStart = false;
+var sendBool = false; 
+var status = '';
+
 let dateNow = require('./date');
 
 app.set('key', config.key);
@@ -65,7 +70,7 @@ app.post('/login', (req, res) => {
 });
 
 
-app.get('/files/list', authentication, function(req, res) {
+app.get('/files/list', authentication, (req, res) => {
 	const directoryPath = path.join(__dirname, 'files');
 	var files = [],
 		fileSizes = [];
@@ -104,68 +109,125 @@ app.get('/files/list', authentication, function(req, res) {
 });
 
 
-app.get('/files/metrics', authentication, function(req, res) {
+app.get('/files/metrics', authentication, (req, res) => {
 	const readInterface = readline.createInterface({
 	    input: fs.createReadStream(path.join(__dirname, 'files/file1.tsv')),
 	    output: process,
 	    console: true
 	});
 
-	const o = new Object();
-
-	var dateNowStart = dateNow.getDate();
-
-	readInterface.on('line', function(line) {
-		var line = line.split('\t');
-		var listSegment = line[1].split(',');
-		for (var item in listSegment){
-			var key = String(line[2]);
-			if (!o[listSegment[item]]){
-				var p = new Object();
-				p[key] = 1;
-				o[listSegment[item]] = p;
-			} else {
-				if (key in o[listSegment[item]]){
-					o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
-				} else {
-					o[listSegment[item]][String(key)] = 1;
-				}
-			}
-		}
-	});	
-	var metrics = [];
-	readInterface.on('close', function() {
-	   	//  var oo = {
-  		// 		'183': { BR: 27769, AR: 1166, MX: 3411, CO: 1241, CL: 98, PE: 107 },
-  		// 		'184': { BR: 57242, AR: 2869, CL: 859, MX: 10102, CO: 3523, PE: 1180 },
-  		// 		'185': { MX: 4265, BR: 17648, AR: 272, PE: 178, CO: 839, CL: 272 }
-  		//  }
-	    for (var key in o){
-			var uniques = [];
-			for (var key2 in o[key]){
-				var dict = {};
-				dict['country'] = key2;
-				dict['count'] = o[key][key2];
-				uniques.push(dict);
-			}
-			metrics.push({
-				'segmentId': key,
-				'Uniques': uniques
+	try {
+	  	if (fs.existsSync('file1.txt')) {
+	    	fs.readFile('file1.txt', function(err, data) {
+	    		var dataSend = JSON.parse(data.toString());
+			    //console.log(data);
+			    //process.on('exit', function(code) {
+		    	console.log('return 1');
+		    	
+				//return console.log(`About to exit with code ${code}`);
+				sendBool = true;
+				//return process.kill(process.pid);
+				res.json(dataSend);
+				//});
 			});
 			
+	  	}
+	} catch(err) {
+	  	console.error(err)
+	}
+	if (!fs.existsSync('file1.txt')){
+		const o = new Object();
+
+		var dateNowStart = dateNow.getDate();
+
+		if (!childProcessStart){
+			childProcessStart = true;
+			childProcessEnd = false;
+			readInterface.on('line', function(line) {
+				var line = line.split('\t');
+				var listSegment = line[1].split(',');
+				for (var item in listSegment){
+					var key = String(line[2]);
+					if (!o[listSegment[item]]){
+						var p = new Object();
+						p[key] = 1;
+						o[listSegment[item]] = p;
+					} else {
+						if (key in o[listSegment[item]]){
+							o[listSegment[item]][key] = o[listSegment[item]][key] + 1; 
+						} else {
+							o[listSegment[item]][String(key)] = 1;
+						}
+					}
+				}
+			});	
+			var metrics = [];
+			readInterface.on('close', function() {
+			    for (var key in o){
+					var uniques = [];
+					for (var key2 in o[key]){
+						var dict = {};
+						dict['country'] = key2;
+						dict['count'] = o[key][key2];
+						uniques.push(dict);
+					}
+					metrics.push({
+						'segmentId': key,
+						'Uniques': uniques
+					});
+					
+				}
+				var dateNowEnd = dateNow.getDate();
+				childProcessStart = false;
+				childProcessEnd = true;
+				status = 'ready';
+
+				console.log('end child');
+				console.log(status);
+
+				var jsonData = {
+	            	'response': {
+	                    'status': 'ready',
+	                    'started' : dateNowStart,
+	                    'finished' : dateNowEnd,
+	                	'Metrics': metrics
+	                }
+	            };
+	            var jsonData = JSON.stringify(jsonData);
+	            console.log(jsonData);
+	 			var fs = require('fs'); 
+				fs.writeFile("file1.txt", jsonData, function(err) {
+				    if (err) {
+				        console.log(err);
+				    } else {
+				    	status == 'ready';
+				    }
+				});
+				console.log('before res');
+				// res.json({
+			 //   		response: {
+			 //   			'status': 'ready',
+			 //   			'started' : dateNowStart,
+			 //   			'finished' : dateNowEnd,
+			 //   			'Metrics': metrics
+			 //   		}
+			 //  	});
+			 // 	res.redirect('/login');
+			});
+		} else {
+			if (status == 'processing'){
+				// res.json({
+			 //   		response: {
+			 //   			'status': 'processing',
+			 //   		}
+			 //  	});
+			};
+			status = 'processing';
 		}
-		var dateNowEnd = dateNow.getDate();
+		
+	}
 
-		res.json({
-	   		response: {
-	   			'status': 'ready',
-	   			'started' : dateNowStart,
-	   			'finished' : dateNowEnd,
-	   			'Metrics': metrics
-	   		}
-	  	});
-
-	})
+	
 });
 
 
